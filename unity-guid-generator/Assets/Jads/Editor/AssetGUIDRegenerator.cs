@@ -41,7 +41,6 @@ SOFTWARE.
 
 using System;
 using System.IO;
-using System.Runtime.Serialization;
 using UnityEditor;
 using UnityEngine;
 
@@ -68,12 +67,23 @@ namespace Jads.Tools
         public static void RegenerateGUID_Implementation()
         {
             var selectedGUIDs = Selection.assetGUIDs;
-            
-            AssetDatabase.StartAssetEditing();
-            AssetGUIDRegenerator.RegenerateGUIDs(selectedGUIDs);
-            AssetDatabase.StopAssetEditing();
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+
+            var option = EditorUtility.DisplayDialogComplex($"Regenerate GUID for {selectedGUIDs.Length} asset/s",
+                "Intentionally modifying asset GUID is not recommended unless certain issues are encountered. \nDo you want to proceed?",
+                "Yes, please", "Nope", "I need more info");
+
+            if (option == 0)
+            {
+                AssetDatabase.StartAssetEditing();
+                AssetGUIDRegenerator.RegenerateGUIDs(selectedGUIDs);
+                AssetDatabase.StopAssetEditing();
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
+            else if (option == 2)
+            {
+                Application.OpenURL("https://github.com/jeffjads/unity-guid-regenerator/blob/master/README.md");
+            }
         }
     }
 
@@ -90,8 +100,9 @@ namespace Jads.Tools
         {
             var assetGUIDs = AssetDatabase.FindAssets(SearchFilter, SearchDirectories);
 
-            var countSuccess = 0; 
+            var countSuccess = 0;
             var countReplaced = 0;
+            
             
             foreach (var selectedGUID in selectedGUIDs)
             {
