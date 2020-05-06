@@ -40,7 +40,9 @@ SOFTWARE.
 #if UNITY_EDITOR
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -48,6 +50,7 @@ namespace Jads.Tools
 {
     public class AssetGUIDRegeneratorMenu
     {
+        public static readonly string Version = "1.0.0";
         [MenuItem("Assets/Regenerate GUID", true)]
         public static bool RegenerateGUID_Validation()
         {
@@ -69,7 +72,8 @@ namespace Jads.Tools
             var selectedGUIDs = Selection.assetGUIDs;
 
             var option = EditorUtility.DisplayDialogComplex($"Regenerate GUID for {selectedGUIDs.Length} asset/s",
-                "Intentionally modifying asset GUID is not recommended unless certain issues are encountered. \nDo you want to proceed?",
+                "DISCLAIMER: Intentionally modifying asset GUID is not recommended unless certain issues are encountered. " +
+                "\n\nMake sure you have a backup or is using a version control system. \n\nDo you want to proceed?",
                 "Yes, please", "Nope", "I need more info");
 
             if (option == 0)
@@ -100,13 +104,12 @@ namespace Jads.Tools
         {
             var assetGUIDs = AssetDatabase.FindAssets(SearchFilter, SearchDirectories);
 
-            var countSuccess = 0;
-            var countReplaced = 0;
-            
-            
+            var updatedAssets = new Dictionary<string, int>();
+            var skippedAssets = new List<string>();
+
             foreach (var selectedGUID in selectedGUIDs)
             {
-                var newGUID = GUID.Generate();
+                var newGUID = GUID.Generate().ToString();
                 
                 try
                 {
@@ -131,7 +134,7 @@ namespace Jads.Tools
 
                     if (assetPath.EndsWith(".unity"))
                     {
-                        Debug.Log($"RegenerateGUIDs - Skipping scene: {assetPath}");
+                        skippedAssets.Add(assetPath);
                         continue;
                     }
 
@@ -145,7 +148,7 @@ namespace Jads.Tools
                         HideFile(metaPath, metaAttributes);
                     }
 
-                    metaContents = metaContents.Replace(selectedGUID, newGUID.ToString());
+                    metaContents = metaContents.Replace(selectedGUID, newGUID);
                     File.WriteAllText(metaPath, metaContents);
                     
                     if (bIsInitiallyHidden) UnhideFile(metaPath, metaAttributes);
@@ -165,14 +168,13 @@ namespace Jads.Tools
                         if (!contents.Contains(selectedGUID)) continue;
                         
                         EditorUtility.DisplayProgressBar("Regenerating GUIDs", path, (float) counter / assetGUIDs.Length);
-                        contents = contents.Replace(selectedGUID, newGUID.ToString());
+                        contents = contents.Replace(selectedGUID, newGUID);
                         File.WriteAllText(path, contents);
                         
                         counter++;
-                        countReplaced++;
                     }
-
-                    countSuccess++;
+                    
+                    updatedAssets.Add(AssetDatabase.GUIDToAssetPath(selectedGUID), counter);
                 }
                 catch (Exception e)
                 {
@@ -185,9 +187,17 @@ namespace Jads.Tools
             }
             
             if (EditorUtility.DisplayDialog("Regenerate GUID",
-                $"Regenerated GUID for {countSuccess} files and {countReplaced} references.", "Done"))
+                $"Regenerated GUID for {updatedAssets.Count} assets. \nSee console logs for detailed report.", "Done"))
             {
-                // Display report to Console 
+                var message = $"<b>GUID Regenerator {AssetGUIDRegeneratorMenu.Version}</b>\n";
+                
+                if (updatedAssets.Count > 0) message += $"<b><color=green>{updatedAssets.Count} Updated Asset/s</color></b>\n";
+                message = updatedAssets.Aggregate(message, (current, kvp) => current + $"{kvp.Value} references\t{kvp.Key}\n");
+                
+                if (skippedAssets.Count > 0) message += $"\n<b><color=red>{skippedAssets.Count} Skipped Asset/s</color></b>\n";
+                message = skippedAssets.Aggregate(message, (current, skipped) => current + $"{skipped}\n");
+
+                Debug.Log($"{message}");
             }
         }
 
