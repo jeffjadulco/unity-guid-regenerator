@@ -1,6 +1,7 @@
 ﻿/*
  
 GitHub: https://github.com/jeffjads/unity-guid-regenerator
+Related Docs: https://docs.unity3d.com/ScriptReference/AssetDatabase.html
 
 === LICENSE ===
 
