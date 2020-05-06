@@ -73,7 +73,7 @@ namespace Jads.Tools
 
             var option = EditorUtility.DisplayDialogComplex($"Regenerate GUID for {selectedGUIDs.Length} asset/s",
                 "DISCLAIMER: Intentionally modifying asset GUID is not recommended unless certain issues are encountered. " +
-                "\n\nMake sure you have a backup or is using a version control system. \n\nDo you want to proceed?",
+                "\n\nMake sure you have a backup or is using a version control system. \n\nThis operation can take a long time on larger projects. Do you want to proceed?",
                 "Yes, please", "Nope", "I need more info");
 
             if (option == 0)
@@ -156,10 +156,14 @@ namespace Jads.Tools
                     /*
                      * PART 2 - Update the GUID for all assets that references the selected GUID
                      */
-                    var counter = 0;
+                    var countProgress = 0;
+                    var countReplaced = 0;
                     foreach (var guid in assetGUIDs)
                     {
+                        countProgress++;
                         var path = AssetDatabase.GUIDToAssetPath(guid);
+                        
+                        EditorUtility.DisplayProgressBar($"Regenerating GUID: {assetPath}", path, (float) countProgress / assetGUIDs.Length);
                         
                         if (File.GetAttributes(path).HasFlag(FileAttributes.Directory)) continue;
 
@@ -167,14 +171,13 @@ namespace Jads.Tools
                         
                         if (!contents.Contains(selectedGUID)) continue;
                         
-                        EditorUtility.DisplayProgressBar("Regenerating GUIDs", path, (float) counter / assetGUIDs.Length);
                         contents = contents.Replace(selectedGUID, newGUID);
                         File.WriteAllText(path, contents);
                         
-                        counter++;
+                        countReplaced++;
                     }
                     
-                    updatedAssets.Add(AssetDatabase.GUIDToAssetPath(selectedGUID), counter);
+                    updatedAssets.Add(AssetDatabase.GUIDToAssetPath(selectedGUID), countReplaced);
                 }
                 catch (Exception e)
                 {
