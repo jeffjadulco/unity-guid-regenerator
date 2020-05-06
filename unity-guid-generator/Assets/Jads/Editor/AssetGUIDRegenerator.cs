@@ -146,6 +146,9 @@ namespace Jads.Tools
                     foreach (var guid in assetGUIDs)
                     {
                         var path = AssetDatabase.GUIDToAssetPath(guid);
+                        
+                        if (File.GetAttributes(path).HasFlag(FileAttributes.Directory)) continue;
+
                         var contents = File.ReadAllText(path);
                         
                         if (!contents.Contains(selectedGUID)) continue;
