@@ -2,6 +2,13 @@
  
 GitHub: https://github.com/jeffjads/unity-guid-regenerator
 Related Docs: https://docs.unity3d.com/ScriptReference/AssetDatabase.html
+              https://docs.unity3d.com/ScriptReference/AssetDatabase.FindAssets.html
+              
+=== DISCLAIMER ===
+
+Only use this if really needed. Intentionally modifying asset GUID is not recommended unless certain issues are encountered.
+
+=== DISCLAIMER ===
 
 === LICENSE ===
 
@@ -72,32 +79,32 @@ namespace Jads.Tools
 
     internal class AssetGUIDRegenerator
     {
-        // Add documentation
-        private const string SearchFilter = "t:GameObject t:Scene t:Material";
+        // Basically, we want to limit the types here (e.g. "t:GameObject t:Scene t:Material").
+        // But to support ScriptableObjects dynamically, we just include the base of all assets which is "t:Object"
+        private const string SearchFilter = "t:Object";
 
-        // Add documentation
+        // Set to "Assets/" folder only. We don't want to include other directories of the root folder
         private static readonly string[] SearchDirectories = { "Assets" };
 
         public static void RegenerateGUIDs(string[] selectedGUIDs)
         {
-            // Store all asset GUIDs
             var assetGUIDs = AssetDatabase.FindAssets(SearchFilter, SearchDirectories);
-            // Debug.Log($"RegenerateGUIDs - Assets found count: {assetGUIDs.Length}");
 
             var countSuccess = 0; 
             var countReplaced = 0;
             
             foreach (var selectedGUID in selectedGUIDs)
             {
-                Debug.Log($"RegenerateGUIDs - GUID: {selectedGUID}");
                 var newGUID = GUID.Generate();
                 
                 try
                 {
+                    /*
+                     * PART 1 - Replace the GUID of the selected asset itself. If the .meta file does not exists or does not match the guid (which shouldn't happen), do not proceed to part 2
+                     */
                     var assetPath = AssetDatabase.GUIDToAssetPath(selectedGUID);
                     var metaPath = AssetDatabase.GetTextMetaFilePathFromAssetPath(assetPath);
 
-                    // Check if .meta file exists
                     if (!File.Exists(metaPath))
                     {
                         throw new FileNotFoundException($"The meta file of selected asset cannot be found. Asset: {assetPath}");
@@ -109,6 +116,12 @@ namespace Jads.Tools
                     if (!metaContents.Contains(selectedGUID))
                     {
                         throw new ArgumentException($"The GUID of selected asset does not match the GUID in its meta file.");
+                    }
+
+                    if (assetPath.EndsWith(".unity"))
+                    {
+                        Debug.Log($"RegenerateGUIDs - Skipping scene: {assetPath}");
+                        continue;
                     }
 
                     var metaAttributes = File.GetAttributes(metaPath);
@@ -126,6 +139,9 @@ namespace Jads.Tools
                     
                     if (bIsInitiallyHidden) UnhideFile(metaPath, metaAttributes);
 
+                    /*
+                     * PART 2 - Update the GUID for all assets that references the selected GUID
+                     */
                     var counter = 0;
                     foreach (var guid in assetGUIDs)
                     {
