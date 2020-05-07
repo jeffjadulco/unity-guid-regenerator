@@ -28,6 +28,8 @@ The simplest workaround for this is to duplicate the asset. The newly created as
 ## Notes
 - Scenes are always skipped as this corrupts the scene.
 
+## [Get it here!](https://github.com/jeffjads/unity-guid-regenerator/releases)
+
 ## Author
 - [Jeff Jadulco](https://github.com/jeffjads)
 
