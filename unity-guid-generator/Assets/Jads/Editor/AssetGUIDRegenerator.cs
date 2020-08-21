@@ -50,7 +50,7 @@ namespace Jads.Tools
 {
     public class AssetGUIDRegeneratorMenu
     {
-        public static readonly string Version = "1.0.0";
+        public static readonly string Version = "1.0.1";
         [MenuItem("Assets/Regenerate GUID", true)]
         public static bool RegenerateGUID_Validation()
         {
