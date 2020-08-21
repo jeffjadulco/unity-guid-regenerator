@@ -59,8 +59,7 @@ namespace Jads.Tools
             foreach (var guid in Selection.assetGUIDs)
             {
                 var assetPath = AssetDatabase.GUIDToAssetPath(guid);
-                bAreSelectedAssetsValid = !string.IsNullOrEmpty(guid) && guid != "0" &&
-                                          !File.GetAttributes(assetPath).HasFlag(FileAttributes.Directory);
+                bAreSelectedAssetsValid = !string.IsNullOrEmpty(guid) && guid != "0";
             }
             
             return bAreSelectedAssetsValid;
@@ -69,9 +68,9 @@ namespace Jads.Tools
         [MenuItem("Assets/Regenerate GUID")]
         public static void RegenerateGUID_Implementation()
         {
-            var selectedGUIDs = Selection.assetGUIDs;
+            var assetGUIDS = AssetGUIDRegenerator.ExtractGUIDs(Selection.assetGUIDs);
 
-            var option = EditorUtility.DisplayDialogComplex($"Regenerate GUID for {selectedGUIDs.Length} asset/s",
+            var option = EditorUtility.DisplayDialogComplex($"Regenerate GUID for {assetGUIDS.Length} asset/s",
                 "DISCLAIMER: Intentionally modifying asset GUID is not recommended unless certain issues are encountered. " +
                 "\n\nMake sure you have a backup or is using a version control system. \n\nThis operation can take a long time on larger projects. Do you want to proceed?",
                 "Yes, please", "Nope", "I need more info");
@@ -79,7 +78,7 @@ namespace Jads.Tools
             if (option == 0)
             {
                 AssetDatabase.StartAssetEditing();
-                AssetGUIDRegenerator.RegenerateGUIDs(selectedGUIDs);
+                AssetGUIDRegenerator.RegenerateGUIDs(assetGUIDS);
                 AssetDatabase.StopAssetEditing();
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
@@ -121,6 +120,7 @@ namespace Jads.Tools
 
                     if (!File.Exists(metaPath))
                     {
+                        skippedAssets.Add(assetPath);
                         throw new FileNotFoundException($"The meta file of selected asset cannot be found. Asset: {assetPath}");
                     }
 
@@ -129,9 +129,14 @@ namespace Jads.Tools
                     // Check if guid in .meta file matches the guid of selected asset
                     if (!metaContents.Contains(selectedGUID))
                     {
-                        throw new ArgumentException($"The GUID of selected asset does not match the GUID in its meta file.");
+                        skippedAssets.Add(assetPath);
+                        throw new ArgumentException($"The GUID of [{assetPath}] does not match the GUID in its meta file.");
                     }
 
+                    // Skip folders
+                    if (IsDirectory(assetPath)) continue;
+
+                    // Skip scene files
                     if (assetPath.EndsWith(".unity"))
                     {
                         skippedAssets.Add(assetPath);
@@ -165,7 +170,7 @@ namespace Jads.Tools
                         
                         EditorUtility.DisplayProgressBar($"Regenerating GUID: {assetPath}", path, (float) countProgress / assetGUIDs.Length);
                         
-                        if (File.GetAttributes(path).HasFlag(FileAttributes.Directory)) continue;
+                        if (IsDirectory(path)) continue;
 
                         var contents = File.ReadAllText(path);
                         
@@ -194,7 +199,7 @@ namespace Jads.Tools
             {
                 var message = $"<b>GUID Regenerator {AssetGUIDRegeneratorMenu.Version}</b>\n";
                 
-                if (updatedAssets.Count > 0) message += $"<b><color=green>{updatedAssets.Count} Updated Asset/s</color></b>\n";
+                if (updatedAssets.Count > 0) message += $"<b><color=green>{updatedAssets.Count} Updated Asset/s</color></b>\tSelect this log for more info\n";
                 message = updatedAssets.Aggregate(message, (current, kvp) => current + $"{kvp.Value} references\t{kvp.Key}\n");
                 
                 if (skippedAssets.Count > 0) message += $"\n<b><color=red>{skippedAssets.Count} Skipped Asset/s</color></b>\n";
@@ -202,6 +207,27 @@ namespace Jads.Tools
 
                 Debug.Log($"{message}");
             }
+        }
+
+        // Searches for Directories and extracts all asset guids inside it using AssetDatabase.FindAssets
+        public static string[] ExtractGUIDs(string[] selectedGUIDs)
+        {
+            var finalGuids = new List<string>();
+            foreach (var guid in selectedGUIDs)
+            {
+                var assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                if (IsDirectory(assetPath))
+                {
+                    string[] searchDirectory = {assetPath};
+                    finalGuids.AddRange(AssetDatabase.FindAssets(SearchFilter, searchDirectory));
+                }
+                else
+                {
+                    finalGuids.Add(guid);
+                }
+            }
+            
+            return finalGuids.ToArray();
         }
 
         private static void HideFile(string path, FileAttributes attributes)
@@ -215,6 +241,8 @@ namespace Jads.Tools
             attributes |= FileAttributes.Hidden;
             File.SetAttributes(path, attributes);
         }
+
+        private static bool IsDirectory(string path) => File.GetAttributes(path).HasFlag(FileAttributes.Directory);
     }
 }
 
