@@ -28,7 +28,10 @@ The simplest workaround for this is to duplicate the asset. The newly created as
 ## Notes
 - Scenes are always skipped as this corrupts the scene.
 
-## [Get it here!](https://github.com/jeffjads/unity-guid-regenerator/releases)
+## Installation
+1. Unity Editor > Windows > Package Manager
+2. Add package from git URL...
+3. Enter `https://github.com/jeffjadulco/unity-guid-regenerator.git`
 
 ## Author
 - [Jeff Jadulco](https://github.com/jeffjads)
