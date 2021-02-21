@@ -1,9 +1,9 @@
 ﻿/*
- 
+
 GitHub: https://github.com/jeffjads/unity-guid-regenerator
 Related Docs: https://docs.unity3d.com/ScriptReference/AssetDatabase.html
               https://docs.unity3d.com/ScriptReference/AssetDatabase.FindAssets.html
-              
+
 === DISCLAIMER ===
 
 Only use this if really needed. Intentionally modifying asset GUID is not recommended unless certain issues are encountered.
@@ -14,7 +14,7 @@ Only use this if really needed. Intentionally modifying asset GUID is not recomm
 
 MIT License
 
-Copyright (c) 2020 Jefferson Jadulco
+Copyright (c) 2021 Jefferson Jadulco
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ namespace Jads.Tools
                 var assetPath = AssetDatabase.GUIDToAssetPath(guid);
                 bAreSelectedAssetsValid = !string.IsNullOrEmpty(guid) && guid != "0";
             }
-            
+
             return bAreSelectedAssetsValid;
         }
 
@@ -109,7 +109,7 @@ namespace Jads.Tools
             foreach (var selectedGUID in selectedGUIDs)
             {
                 var newGUID = GUID.Generate().ToString();
-                
+
                 try
                 {
                     /*
@@ -125,7 +125,7 @@ namespace Jads.Tools
                     }
 
                     var metaContents = File.ReadAllText(metaPath);
-                    
+
                     // Check if guid in .meta file matches the guid of selected asset
                     if (!metaContents.Contains(selectedGUID))
                     {
@@ -145,7 +145,7 @@ namespace Jads.Tools
 
                     var metaAttributes = File.GetAttributes(metaPath);
                     var bIsInitiallyHidden = false;
-                    
+
                     // If the .meta file is hidden, unhide it temporarily
                     if (metaAttributes.HasFlag(FileAttributes.Hidden))
                     {
@@ -155,7 +155,7 @@ namespace Jads.Tools
 
                     metaContents = metaContents.Replace(selectedGUID, newGUID);
                     File.WriteAllText(metaPath, metaContents);
-                    
+
                     if (bIsInitiallyHidden) UnhideFile(metaPath, metaAttributes);
 
                     /*
@@ -167,21 +167,21 @@ namespace Jads.Tools
                     {
                         countProgress++;
                         var path = AssetDatabase.GUIDToAssetPath(guid);
-                        
+
                         EditorUtility.DisplayProgressBar($"Regenerating GUID: {assetPath}", path, (float) countProgress / assetGUIDs.Length);
-                        
+
                         if (IsDirectory(path)) continue;
 
                         var contents = File.ReadAllText(path);
-                        
+
                         if (!contents.Contains(selectedGUID)) continue;
-                        
+
                         contents = contents.Replace(selectedGUID, newGUID);
                         File.WriteAllText(path, contents);
-                        
+
                         countReplaced++;
                     }
-                    
+
                     updatedAssets.Add(AssetDatabase.GUIDToAssetPath(selectedGUID), countReplaced);
                 }
                 catch (Exception e)
@@ -193,15 +193,15 @@ namespace Jads.Tools
                     EditorUtility.ClearProgressBar();
                 }
             }
-            
+
             if (EditorUtility.DisplayDialog("Regenerate GUID",
                 $"Regenerated GUID for {updatedAssets.Count} assets. \nSee console logs for detailed report.", "Done"))
             {
                 var message = $"<b>GUID Regenerator {AssetGUIDRegeneratorMenu.Version}</b>\n";
-                
+
                 if (updatedAssets.Count > 0) message += $"<b><color=green>{updatedAssets.Count} Updated Asset/s</color></b>\tSelect this log for more info\n";
                 message = updatedAssets.Aggregate(message, (current, kvp) => current + $"{kvp.Value} references\t{kvp.Key}\n");
-                
+
                 if (skippedAssets.Count > 0) message += $"\n<b><color=red>{skippedAssets.Count} Skipped Asset/s</color></b>\n";
                 message = skippedAssets.Aggregate(message, (current, skipped) => current + $"{skipped}\n");
 
@@ -226,7 +226,7 @@ namespace Jads.Tools
                     finalGuids.Add(guid);
                 }
             }
-            
+
             return finalGuids.ToArray();
         }
 

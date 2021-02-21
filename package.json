@@ -1,0 +1,16 @@
+{
+  "name": "com.jeffjadulco.guidregenerator",
+  "version": "1.0.1",
+  "displayName": "GUID Regenerator",
+  "description": "A Unity editor tool to regenerate GUID for your assets",
+  "unity": "2019.4",
+  "unityRelease": "18f1",
+  "keywords": [
+    "guid"
+  ],
+  "author": {
+    "name": "Jeff Jadulco",
+    "email": "hey@jeffjadulco.com",
+    "url": "https://jeffjadulco.com"
+  }
+}
