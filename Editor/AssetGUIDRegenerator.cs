@@ -50,7 +50,7 @@ namespace Jads.Tools
 {
     public class AssetGUIDRegeneratorMenu
     {
-        public const string Version = "1.0.2";
+        public const string Version = "1.0.3";
 
         [MenuItem("Assets/Regenerate GUID/Files Only", true)]
         public static bool RegenerateGUID_Validation()

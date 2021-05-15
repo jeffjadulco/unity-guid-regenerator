@@ -3,7 +3,7 @@
 
 A Unity editor tool to regenerate GUID for your assets
 
-> **Disclaimer**: Only use this if needed. Intentionally modifying the GUID of an asset is not recommended unless certain issues are encountered
+> :warning: **Disclaimer**: Only use this if needed. Intentionally modifying the GUID of an asset is not recommended unless certain files are problematic
 
 ## What is GUID in Unity?
 GUID is a unique hash that is automatically generated and assigned when creating a new asset. This GUID is used when a serialized asset references another asset.
@@ -17,6 +17,11 @@ When you work on multiple projects that are based on existing projects, chances 
 
 The simplest workaround for this is to duplicate the asset. The newly created asset will have its own GUID assigned by Unity. However, you will need to manually replace all its references in the Scene, prefabs, etc.
 
+## Installation
+1. Unity Editor > Windows > Package Manager
+2. Add package from git URL...
+3. Enter `https://github.com/jeffjadulco/unity-guid-regenerator.git`
+
 ## Usage
 ![inst](assets/instructions-1.png)
 1. Select one or multiple assets (folders are not supported)
@@ -27,11 +32,6 @@ The simplest workaround for this is to duplicate the asset. The newly created as
 
 ## Notes
 - Scenes are always skipped as this corrupts the scene.
-
-## Installation
-1. Unity Editor > Windows > Package Manager
-2. Add package from git URL...
-3. Enter `https://github.com/jeffjadulco/unity-guid-regenerator.git`
 
 ## Author
 - [Jeff Jadulco](https://github.com/jeffjads)
