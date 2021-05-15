@@ -50,9 +50,21 @@ namespace Jads.Tools
 {
     public class AssetGUIDRegeneratorMenu
     {
-        public static readonly string Version = "1.0.2";
-        [MenuItem("Assets/Regenerate GUID", true)]
+        public const string Version = "1.0.3";
+
+        [MenuItem("Assets/Regenerate GUID/Files Only", true)]
         public static bool RegenerateGUID_Validation()
+        {
+            return DoValidation();
+        }
+
+        [MenuItem("Assets/Regenerate GUID/Files and Folders", true)]
+        public static bool RegenerateGUIDWithFolders_Validation()
+        {
+            return DoValidation();
+        }
+
+        private static bool DoValidation()
         {
             var bAreSelectedAssetsValid = true;
 
@@ -65,10 +77,21 @@ namespace Jads.Tools
             return bAreSelectedAssetsValid;
         }
 
-        [MenuItem("Assets/Regenerate GUID")]
+        [MenuItem("Assets/Regenerate GUID/Files Only")]
         public static void RegenerateGUID_Implementation()
         {
-            var assetGUIDS = AssetGUIDRegenerator.ExtractGUIDs(Selection.assetGUIDs);
+            DoImplementation(false);
+        }
+
+        [MenuItem("Assets/Regenerate GUID/Files and Folders")]
+        public static void RegenerateGUIDWithFolders_Implementation()
+        {
+            DoImplementation(true);
+        }
+
+        private static void DoImplementation(bool includeFolders)
+        {
+            var assetGUIDS = AssetGUIDRegenerator.ExtractGUIDs(Selection.assetGUIDs, includeFolders);
 
             var option = EditorUtility.DisplayDialogComplex($"Regenerate GUID for {assetGUIDS.Length} asset/s",
                 "DISCLAIMER: Intentionally modifying asset GUID is not recommended unless certain issues are encountered. " +
@@ -133,8 +156,8 @@ namespace Jads.Tools
                         throw new ArgumentException($"The GUID of [{assetPath}] does not match the GUID in its meta file.");
                     }
 
-                    // Skip folders
-                    if (IsDirectory(assetPath)) continue;
+                    // Allow regenerating guid of folder because modifying it doesn't seem to be harmful
+                    // if (IsDirectory(assetPath)) continue;
 
                     // Skip scene files
                     if (assetPath.EndsWith(".unity"))
@@ -157,6 +180,13 @@ namespace Jads.Tools
                     File.WriteAllText(metaPath, metaContents);
 
                     if (bIsInitiallyHidden) UnhideFile(metaPath, metaAttributes);
+
+                    if (IsDirectory(assetPath))
+                    {
+                        // Skip PART 2 for directories as they should not have any references in assets or scenes
+                        updatedAssets.Add(AssetDatabase.GUIDToAssetPath(selectedGUID), 0);
+                        continue;
+                    }
 
                     /*
                      * PART 2 - Update the GUID for all assets that references the selected GUID
@@ -210,7 +240,7 @@ namespace Jads.Tools
         }
 
         // Searches for Directories and extracts all asset guids inside it using AssetDatabase.FindAssets
-        public static string[] ExtractGUIDs(string[] selectedGUIDs)
+        public static string[] ExtractGUIDs(string[] selectedGUIDs, bool includeFolders)
         {
             var finalGuids = new List<string>();
             foreach (var guid in selectedGUIDs)
@@ -219,6 +249,8 @@ namespace Jads.Tools
                 if (IsDirectory(assetPath))
                 {
                     string[] searchDirectory = {assetPath};
+
+                    if (includeFolders) finalGuids.Add(guid);
                     finalGuids.AddRange(AssetDatabase.FindAssets(SearchFilter, searchDirectory));
                 }
                 else
@@ -242,7 +274,7 @@ namespace Jads.Tools
             File.SetAttributes(path, attributes);
         }
 
-        private static bool IsDirectory(string path) => File.GetAttributes(path).HasFlag(FileAttributes.Directory);
+        public static bool IsDirectory(string path) => File.GetAttributes(path).HasFlag(FileAttributes.Directory);
     }
 }
 
