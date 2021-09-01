@@ -129,10 +129,46 @@ namespace Jads.Tools
             var updatedAssets = new Dictionary<string, int>();
             var skippedAssets = new List<string>();
 
+            var inverseReferenceMap = new Dictionary<string, HashSet<string>>();
+
+            /*
+            * PREPARATION PART 1 - Initialize map to store all paths that have a reference to our selectedGUIDs
+            */
+            foreach (var selectedGUID in selectedGUIDs)
+            {
+                inverseReferenceMap[selectedGUID] = new HashSet<string>();
+            }
+
+            /*
+             * PREPARATION PART 2 - Scan all assets and store the inverse reference if contains a reference to any selectedGUI...
+             */
+            var scanProgress = 0;
+            var referencesCount = 0;
+            foreach (var guid in assetGUIDs)
+            {
+                scanProgress++;
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (IsDirectory(path)) continue;
+
+                var dependencies = AssetDatabase.GetDependencies(path);
+                foreach (var dependency in dependencies)
+                {
+                    EditorUtility.DisplayProgressBar($"Scanning guid references on:", path, (float) scanProgress / assetGUIDs.Length);
+
+                    var dependencyGUID = AssetDatabase.AssetPathToGUID(dependency);
+                    if (inverseReferenceMap.ContainsKey(dependencyGUID))
+                    {
+                        inverseReferenceMap[dependencyGUID].Add(path);
+                        referencesCount++;
+                    }
+                }
+            }
+
+            var countProgress = 0;
+
             foreach (var selectedGUID in selectedGUIDs)
             {
                 var newGUID = GUID.Generate().ToString();
-
                 try
                 {
                     /*
@@ -191,23 +227,22 @@ namespace Jads.Tools
                     /*
                      * PART 2 - Update the GUID for all assets that references the selected GUID
                      */
-                    var countProgress = 0;
                     var countReplaced = 0;
-                    foreach (var guid in assetGUIDs)
+                    var referencePaths = inverseReferenceMap[selectedGUID];
+                    foreach(var referencePath in referencePaths)
                     {
                         countProgress++;
-                        var path = AssetDatabase.GUIDToAssetPath(guid);
 
-                        EditorUtility.DisplayProgressBar($"Regenerating GUID: {assetPath}", path, (float) countProgress / assetGUIDs.Length);
+                        EditorUtility.DisplayProgressBar($"Regenerating GUID: {assetPath}", referencePath, (float) countProgress / referencesCount);
 
-                        if (IsDirectory(path)) continue;
+                        if (IsDirectory(referencePath)) continue;
 
-                        var contents = File.ReadAllText(path);
+                        var contents = File.ReadAllText(referencePath);
 
                         if (!contents.Contains(selectedGUID)) continue;
 
                         contents = contents.Replace(selectedGUID, newGUID);
-                        File.WriteAllText(path, contents);
+                        File.WriteAllText(referencePath, contents);
 
                         countReplaced++;
                     }
