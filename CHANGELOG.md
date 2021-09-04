@@ -1,3 +1,6 @@
+### 1.0.4 (2021.09.04)
+- **Improved**: Faster regeneration time. Thanks to @mayofunk
+
 ### 1.0.3 (2021.05.14)
 
 - **New**: Added option to include folders to the list of guids to be generated
