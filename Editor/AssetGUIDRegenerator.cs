@@ -50,7 +50,7 @@ namespace Jads.Tools
 {
     public class AssetGUIDRegeneratorMenu
     {
-        public const string Version = "1.0.4";
+        public const string Version = "1.0.5";
 
         [MenuItem("Assets/Regenerate GUID/Files Only", true)]
         public static bool RegenerateGUID_Validation()
@@ -159,6 +159,11 @@ namespace Jads.Tools
                     if (inverseReferenceMap.ContainsKey(dependencyGUID))
                     {
                         inverseReferenceMap[dependencyGUID].Add(path);
+                        
+                        // Also include .meta path. This fixes broken references when an FBX uses external materials
+                        var metaPath = AssetDatabase.GetTextMetaFilePathFromAssetPath(path);
+                        inverseReferenceMap[dependencyGUID].Add(metaPath);
+                        
                         referencesCount++;
                     }
                 }

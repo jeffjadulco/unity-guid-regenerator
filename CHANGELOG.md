@@ -1,3 +1,6 @@
+### 1.0.5 (2023.01.31)
+- **Fix**: Broken material references on an FBX asset when using legacy/remapped materials
+
 ### 1.0.4 (2021.09.04)
 - **Improved**: Faster regeneration time. Thanks to @mayofunk
 
